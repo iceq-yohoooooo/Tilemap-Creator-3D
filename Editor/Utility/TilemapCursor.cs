@@ -208,7 +208,7 @@ namespace TilemapCreator3D.EditorOnly {
                         for(int z = 0; z < _area.Depth; z++) {
                             for(int y = 0; y < _area.Height; y++) {
                                 for(int x = 0; x < _area.Width; x++) {
-                                    float3 wPos = _map.GridToWorld(_area.Min + new int3(x, y, z), new float3(0.5f, 0.5f, 0.5f)) + toCamOffset;
+                                    float3 wPos = _map.GridToWorld(_area.Min + new int3(x, y, z), new float3(0.5f, 0.0f, 0.5f)) + toCamOffset;
                                     Graphics.DrawMeshNow(previewMesh, Matrix4x4.TRS(wPos, trs.rotation * Quaternion.Euler(0, _settings.Rotation * 90, 0), trs.lossyScale));
                                 }
                             }

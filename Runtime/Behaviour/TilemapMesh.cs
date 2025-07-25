@@ -153,7 +153,7 @@ namespace TilemapCreator3D {
                         if(bTile == null || info.Mesh == null || bTile.Material == null) continue;
 
                         // Transform
-                        float3 position = new float3(x - area.Min.x + 0.5f, y - area.Min.y + 0.5f, z - area.Min.z + 0.5f) * gridSize;
+                        float3 position = new float3(x - area.Min.x + 0.5f, y - area.Min.y, z - area.Min.z + 0.5f) * gridSize;
                         Quaternion rotation = tile.GetRotation();
                         float3 scale = 1.0f;
 
