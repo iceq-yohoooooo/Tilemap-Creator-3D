@@ -138,33 +138,63 @@ namespace TilemapCreator3D {
 
             // Put tiles into data array
             NativeList<RawMeshData> meshData = new NativeList<RawMeshData>(area.Width * area.Height * area.Depth, Allocator.TempJob);
+            Mesh.MeshDataArray meshDataArray = default;
+            bool meshDataArrayIsCreated = false;
             int subMeshIndex = 0;
 
-            for(int z = area.Min.z; z < area.Max.z; z++) {
-                for(int y = area.Min.y; y < area.Max.y; y++) {
-                    for(int x = area.Min.x; x < area.Max.x; x++) {
-                        TilemapData.Tile tile = data[x, y, z];
+            try {
+                // Collect all meshes that need to be baked
+                List<Mesh> meshes = new List<Mesh>();
+                for(int z = area.Min.z; z < area.Max.z; z++) {
+                    for(int y = area.Min.y; y < area.Max.y; y++) {
+                        for(int x = area.Min.x; x < area.Max.x; x++) {
+                            TilemapData.Tile tile = data[x, y, z];
+                            if(tile.id == 0 || tile.id > map.Palette.Count) continue;
 
-                        if(tile.id == 0 || tile.id > map.Palette.Count) continue;
-
-                        BaseTile bTile = map.Palette.GetTile(tile.id);
-                        TileInfo info = bTile.GetInfo(tile.variant % bTile.Length); // Add variant here
-
-                        if(bTile == null || info.Mesh == null || bTile.Material == null) continue;
-
-                        // Transform
-                        float3 position = new float3(x - area.Min.x + 0.5f, y - area.Min.y, z - area.Min.z + 0.5f) * gridSize;
-                        Quaternion rotation = tile.GetRotation();
-                        float3 scale = 1.0f;
-
-                        // Submesh
-                        if(!_materials.ContainsKey(bTile.Material)) _materials.Add(bTile.Material, subMeshIndex++);
-                        int subMesh = _materials[bTile.Material];
-
-                        meshData.Add(new RawMeshData(info.Mesh, subMesh, position, rotation, scale));
+                            BaseTile bTile = map.Palette.GetTile(tile.id);
+                            TileInfo info = bTile.GetInfo(tile.variant % bTile.Length);
+                            if(bTile != null && info.Mesh != null && bTile.Material != null) {
+                                meshes.Add(info.Mesh);
+                            }
+                        }
                     }
                 }
-            }
+
+                if(meshes.Count == 0) {
+                    if(chunk.Filter.sharedMesh != null) chunk.Filter.sharedMesh.Clear();
+                    chunk.GameObject.SetActive(false);
+                    return;
+                }
+
+                meshDataArray = Mesh.AcquireReadOnlyMeshData(meshes);
+                meshDataArrayIsCreated = true;
+
+                int meshIndex = 0;
+                for(int z = area.Min.z; z < area.Max.z; z++) {
+                    for(int y = area.Min.y; y < area.Max.y; y++) {
+                        for(int x = area.Min.x; x < area.Max.x; x++) {
+                            TilemapData.Tile tile = data[x, y, z];
+
+                            if(tile.id == 0 || tile.id > map.Palette.Count) continue;
+
+                            BaseTile bTile = map.Palette.GetTile(tile.id);
+                            TileInfo info = bTile.GetInfo(tile.variant % bTile.Length); // Add variant here
+
+                            if(bTile == null || info.Mesh == null || bTile.Material == null) continue;
+
+                            // Transform
+                            float3 position = new float3(x - area.Min.x + 0.5f, y - area.Min.y, z - area.Min.z + 0.5f) * gridSize;
+                            Quaternion rotation = tile.GetRotation();
+                            float3 scale = 1.0f;
+
+                            // Submesh
+                            if(!_materials.ContainsKey(bTile.Material)) _materials.Add(bTile.Material, subMeshIndex++);
+                            int subMesh = _materials[bTile.Material];
+
+                            meshData.Add(new RawMeshData(meshDataArray[meshIndex++], info.Mesh, subMesh, position, rotation, scale));
+                        }
+                    }
+                }
 
             if(meshData.Length > 0) {
                 // Sort sub meshes and calculate offsets
@@ -233,7 +263,10 @@ namespace TilemapCreator3D {
 
             }
 
-            meshData.Dispose();
+            } finally {
+                meshData.Dispose();
+                if(meshDataArrayIsCreated) meshDataArray.Dispose();
+            }
         }
 
     }

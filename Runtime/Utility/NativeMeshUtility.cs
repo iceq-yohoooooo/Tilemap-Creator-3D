@@ -61,8 +61,8 @@ namespace TilemapCreator3D {
         public int IndexCount;
         public int SubMeshIndex;
 
-        public RawMeshData(Mesh mesh, int subMesh, float3 offset, quaternion rotation, float3 scale) {
-            Data = Mesh.AcquireReadOnlyMeshData(mesh)[0];
+        public RawMeshData(Mesh.MeshData meshData, Mesh mesh, int subMesh, float3 offset, quaternion rotation, float3 scale) {
+            Data = meshData;
 
             Transform = float4x4.TRS(offset, rotation, scale);
 
@@ -272,6 +272,7 @@ namespace TilemapCreator3D {
 
             // Clean up
             indices.Dispose();
+            rawData.Dispose();
         }
 
         public void Finalize(Mesh mesh, NativeArray<int2> subMeshes) {
